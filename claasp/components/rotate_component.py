@@ -648,7 +648,43 @@ class Rotate(Component):
         return output_bit_ids, constraints
 
     def smt_deterministic_truncated_xor_differential_trail_constraints(self):
-        return self.smt_constraints()
+        """
+        Return a variable list and SMT-LIB list asserts for rotate in SMT
+        DETERMINISTIC TRUNCATED XOR DIFFERENTIAL model.
+
+        INPUT:
+
+        - None
+
+        EXAMPLES::
+
+            sage: from claasp.ciphers.block_ciphers.speck_block_cipher import SpeckBlockCipher
+            sage: speck = SpeckBlockCipher(number_of_rounds=3)
+            sage: rotate_component = speck.component_from(0, 0)
+            sage: rotate_component.smt_deterministic_truncated_xor_differential_trail_constraints()
+            (['rot_0_0_0_0',
+              'rot_0_0_1_0',
+              ...
+              'rot_0_0_14_1',
+              'rot_0_0_15_1'],
+             ['(assert (= rot_0_0_0_0 plaintext_9_0))',
+              '(assert (= rot_0_0_1_0 plaintext_10_0))',
+              ...
+              '(assert (= rot_0_0_14_1 plaintext_7_1))',
+              '(assert (= rot_0_0_15_1 plaintext_8_1))'])
+        """
+        in_ids_0, in_ids_1 = self._generate_input_double_ids()
+        _, out_ids_0, out_ids_1 = self._generate_output_double_ids()
+        rotation = self.description[1]
+        in_ids_0_rotated = in_ids_0[-rotation:] + in_ids_0[:-rotation]
+        in_ids_1_rotated = in_ids_1[-rotation:] + in_ids_1[:-rotation]
+        constraints = []
+        for ids in zip(out_ids_0, in_ids_0_rotated):
+            constraints.append(smt_utils.smt_assert(smt_utils.smt_equivalent(ids)))
+        for ids in zip(out_ids_1, in_ids_1_rotated):
+            constraints.append(smt_utils.smt_assert(smt_utils.smt_equivalent(ids)))
+
+        return out_ids_0 + out_ids_1, constraints
 
     def smt_xor_differential_propagation_constraints(self, model=None):
         return self.smt_constraints()
