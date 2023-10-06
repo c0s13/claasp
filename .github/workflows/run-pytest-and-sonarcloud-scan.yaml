@@ -16,9 +16,7 @@ concurrency:
 
 jobs:
   run-pytest:
-    runs-on:
-      group: Default
-      labels: claasp
+    runs-on: claasp
     container:
       image: tiicrc/claasp-github-runner:20231004
       credentials:
