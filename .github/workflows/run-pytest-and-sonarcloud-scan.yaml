@@ -16,7 +16,9 @@ concurrency:
 
 jobs:
   run-pytest:
-    runs-on: [self-hosted, ubuntu2204]
+    runs-on:
+      group: Default
+      labels: claasp
     steps:
     - name: Checkout
       uses: actions/checkout@v2
