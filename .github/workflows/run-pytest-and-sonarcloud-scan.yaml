@@ -17,11 +17,6 @@ concurrency:
 jobs:
   run-pytest:
     runs-on: self-hosted
-    container:
-      image: tiicrc/claasp-github-runner:20231004
-      credentials:
-        username: devopscrc
-        password: ${{  secrets.DOCKER_REGISTRY_PASSWORD }}
     steps:
     - name: Checkout
       uses: actions/checkout@v2
