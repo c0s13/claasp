@@ -28,10 +28,6 @@ jobs:
       with:
         persist-credentials: false
         fetch-depth: 0
-    - name: sleep
-      run: |
-          echo testing arc
-          sleep 300
 
   #   - name: Fix Directory Structure
   #     run: |
