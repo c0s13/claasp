@@ -19,6 +19,7 @@ jobs:
     runs-on: claasp
     container:
       image: tiicrc/claasp-github-runner:20231004
+      options: -u root
       credentials:
         username: devopscrc
         password: ${{  secrets.DOCKER_REGISTRY_PASSWORD }}
