@@ -43,6 +43,7 @@ jobs:
     - name: Run remote-pytest
       run: |
             cd /__w/claasp
+            sleep 3600
             pytest -v -n=2 --dist loadfile --cov-report xml:coverage.xml --cov=claasp tests/unit
 
   #   - name: Upload Coverage.xml to artifacts
