@@ -32,13 +32,13 @@ jobs:
         
     - name: Fix Directory Structure
       run: |
-          mkdir /__work/claasp_backup
-          mv -f /__work/claasp/claasp/* /__work/claasp_backup
-          rm -rf /__work/claasp/
-          mkdir /__work/claasp
-          mv -f /__work/claasp_backup/* /__work/claasp
-          chmod g+w /__work/claasp/ -R
-          rm -rf /__work/claasp_backup
+          mkdir /__w/claasp_backup
+          mv -f /__w/claasp/claasp/* /__w/claasp_backup
+          rm -rf /__w/claasp/
+          mkdir /__w/claasp
+          mv -f /__w/claasp_backup/* /__w/claasp
+          chmod g+w /__w/claasp/ -R
+          rm -rf /__w/claasp_backup
 
     - name: Run remote-pytest
       run: |
