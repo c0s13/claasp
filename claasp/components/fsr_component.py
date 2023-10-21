@@ -35,6 +35,47 @@ class FSR(Component):
         super().__init__(component_id, component_type, component_input, output_bit_size, description)
         self.input_len = input_len
 
+    def algebraic_polynomials(self, model):
+        """
+        Return a list of polynomials for the feedback shift registers.
 
+        INPUT:
+
+        - ``model`` -- **model object**; a model instance
+
+        EXAMPLES::
+
+            sage: from claasp.ciphers.stream_ciphers.a5_1_stream_cipher import A51StreamCipher
+            sage: from claasp.cipher_modules.models.algebraic.algebraic_model import AlgebraicModel
+            sage: a51 = A51StreamCipher()
+            sage: fsr_component = a51.get_component_from_id("fsr_1_0")
+            sage: algebraic = AlgebraicModel(a51)
+            sage: L = fsr_component.algebraic_polynomials(algebraic)
+            sage: L[0]
+            linear_layer_0_6_y0 + linear_layer_0_6_x23 + linear_layer_0_6_x19 + linear_layer_0_6_x18 + linear_layer_0_6_x16 + linear_layer_0_6_x15 + linear_layer_0_6_x14 + linear_layer_0_6_x12 + linear_layer_0_6_x9 + linear_layer_0_6_x8 + linear_layer_0_6_x6 + linear_layer_0_6_x3
+        """
+        noutputs = self.output_bit_size
+        ninputs = self.input_bit_size
+        ring_R = model.ring()
+        x = list(ring_R, (map(ring_R, [self.id + "_" + model.input_postfix + str(i) for i in range(ninputs)])))
+        y = vector(ring_R,
+                   list(map(ring_R, [self.id + "_" + model.output_postfix + str(i) for i in range(noutputs)])))
+        polynomial_index_list = self.description[0]
+        loop = self.description[1]
+
+        fsr_polynomial = 0
+        for _ in polynomial_index_list:
+            m = 1
+            for __ in _ :
+                m *= x[__]
+            fsr_polynomial += m
+
+        for i in range(loop):
+            output_bit = fsr_polynomial(*x)
+            x = x[:-1]
+            x.append(output_bit)
+
+        output_polynomials = y+vector(x)
+        return output_polynomials
 
 
