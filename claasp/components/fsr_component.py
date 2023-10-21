@@ -54,6 +54,27 @@ class FSR(Component):
             sage: L[0]
             linear_layer_0_6_y0 + linear_layer_0_6_x23 + linear_layer_0_6_x19 + linear_layer_0_6_x18 + linear_layer_0_6_x16 + linear_layer_0_6_x15 + linear_layer_0_6_x14 + linear_layer_0_6_x12 + linear_layer_0_6_x9 + linear_layer_0_6_x8 + linear_layer_0_6_x6 + linear_layer_0_6_x3
         """
+
+        number_of_registers = self.description[0]
+        output = BitArray(input)
+        R = BooleanPolynomialRing(len(input), 'x')
+        number_of_registers = len(registers_info)
+        registers_polynomial = [0 for _ in range(number_of_registers)]
+        registers_start = [0 for _ in range(number_of_registers)]
+        registers_update_bit = [0 for _ in range(number_of_registers)]
+        clock_polynomials = [None for _ in range(number_of_registers)]
+        end = 0
+
+        word_gf = GF(pow(2, bits_inside_word))
+        word_array = bits_to_word(input, bits_inside_word, word_gf)
+        R = PolynomialRing(word_gf, len(word_array), 'x')
+        number_of_registers = len(registers_info)
+        registers_polynomial = [0 for _ in range(number_of_registers)]
+        registers_start = [0 for _ in range(number_of_registers)]
+        registers_update_word = [0 for _ in range(number_of_registers)]
+        clock_polynomials = [None for _ in range(number_of_registers)]
+        end = 0
+
         noutputs = self.output_bit_size
         ninputs = self.input_bit_size
         ring_R = model.ring()

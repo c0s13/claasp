@@ -1120,7 +1120,6 @@ def fsr_word(input, registers_info, bits_inside_word, number_of_clocks, verbosit
         print("FSR:")
         for i in range(number_of_registers):
             print("  F   = {}".format(registers_polynomial[i]))
-        for i in range(number_of_registers):
             if clock_polynomials[i] is None:
                 print("register_" + str(i + 1) + " clocks:", True)
             else:
