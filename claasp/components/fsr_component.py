@@ -18,9 +18,17 @@
 
 
 from sage.modules.free_module_element import vector
+from sage.rings.polynomial.polynomial_ring_constructor import PolynomialRing
+from sage.rings.finite_rings.finite_field_constructor import FiniteField as GF
+
 
 from claasp.input import Input
 from claasp.component import Component, free_input
+from claasp.utils.utils import get_polynomial_from_binary_polynomial_index_list
+from claasp.utils.utils import get_polynomial_from_word_polynomial_index_list
+from claasp.utils.utils import bits_to_words_array, words_array_to_bits
+from claasp.cipher_modules.models.algebraic.boolean_polynomial_ring import BooleanPolynomialRing
+
 
 
 class FSR(Component):
@@ -55,15 +63,88 @@ class FSR(Component):
             linear_layer_0_6_y0 + linear_layer_0_6_x23 + linear_layer_0_6_x19 + linear_layer_0_6_x18 + linear_layer_0_6_x16 + linear_layer_0_6_x15 + linear_layer_0_6_x14 + linear_layer_0_6_x12 + linear_layer_0_6_x9 + linear_layer_0_6_x8 + linear_layer_0_6_x6 + linear_layer_0_6_x3
         """
 
+        bits_inside_word = self.description[1]
+        if bits_inside_word == 1:
+            return self._algebraic_polynomials_binary(model)
+        else:
+            return self._algebraic_polynomials_word(model)
+
+    def _algebraic_polynomials_binary(self, model):
+        noutputs = self.output_bit_size
+        ninputs = self.input_bit_size
+        ring_R = model.ring()
+        x = list(ring_R, (map(ring_R, [self.id + "_" + model.input_postfix + str(i) for i in range(ninputs)])))
+        y = vector(ring_R,
+                   list(map(ring_R, [self.id + "_" + model.output_postfix + str(i) for i in range(noutputs)])))
         number_of_registers = self.description[0]
-        output = BitArray(input)
-        R = BooleanPolynomialRing(len(input), 'x')
-        number_of_registers = len(registers_info)
         registers_polynomial = [0 for _ in range(number_of_registers)]
         registers_start = [0 for _ in range(number_of_registers)]
         registers_update_bit = [0 for _ in range(number_of_registers)]
         clock_polynomials = [None for _ in range(number_of_registers)]
+        if len(self.description) > 2:
+            clocks = self.description[2]
+        else:
+            clocks = 1
+
         end = 0
+        for i in range(number_of_registers):
+            registers_polynomial[i] = get_polynomial_from_binary_polynomial_index_list(self.description[0][i][1], ring_R)
+            registers_start[i] = end
+            registers_update_bit[i] = self.description[0][i][0]-1
+            if len(self.description[0][i] > 2):
+                clock_polynomials[i] = get_polynomial_from_binary_polynomial_index_list(self.description[0][i][2], ring_R)
+            end = self.description[0][i][0]
+
+        for _ in range(clocks):
+            for i in range(number_of_registers):
+                output_bit = registers_polynomial[i](*x)
+                clock_bit = clock_polynomials[i](*x)
+                for k in range(registers_start[i], registers_update_bit[i]):
+                    x[k] = clock_bit*x[k+1] + (clock_bit+1)*x[k]
+                x[registers_update_bit[i]] = clock_bit*output_bit + (clock_bit+1)*x[registers_update_bit[i]]
+
+        output_polynomials = y+vector(x)
+        return output_polynomials
+
+    def _algebraic_polynomials_word(self, model):
+
+        noutputs = self.output_bit_size
+        ninputs = self.input_bit_size
+        ring_R = model.ring()
+        x = list(ring_R, (map(ring_R, [self.id + "_" + model.input_postfix + str(i) for i in range(ninputs)])))
+        y = vector(ring_R,
+                   list(map(ring_R, [self.id + "_" + model.output_postfix + str(i) for i in range(noutputs)])))
+        word_array =
+        number_of_registers = self.description[0]
+        registers_polynomial = [0 for _ in range(number_of_registers)]
+        registers_start = [0 for _ in range(number_of_registers)]
+        registers_update_bit = [0 for _ in range(number_of_registers)]
+        clock_polynomials = [None for _ in range(number_of_registers)]
+        if len(self.description) > 2:
+            clocks = self.description[2]
+        else:
+            clocks = 1
+
+        end = 0
+        for i in range(number_of_registers):
+            registers_polynomial[i] = get_polynomial_from_word_polynomial_index_list(self.description[0][i][1], ring_R)
+            registers_start[i] = end
+            registers_update_bit[i] = self.description[0][i][0]-1
+            if len(self.description[0][i] > 2):
+                clock_polynomials[i] = get_polynomial_from_word_polynomial_index_list(self.description[0][i][2], ring_R)
+            end = self.description[0][i][0]
+
+        for _ in range(clocks):
+            for i in range(number_of_registers):
+                output_bit = registers_polynomial[i](*word_array)
+                clock_bit = clock_polynomials[i](*word_array)
+                for k in range(registers_start[i], registers_update_bit[i]):
+                    word_array[k] = clock_bit*word_array[k+1] + (clock_bit+1)*word_array[k]
+                word_array[registers_update_bit[i]] = clock_bit*output_bit + (clock_bit+1)*x[registers_update_bit[i]]
+
+        output_polynomials = y+vector(x)
+        return output_polynomials
+
 
         word_gf = GF(pow(2, bits_inside_word))
         word_array = bits_to_word(input, bits_inside_word, word_gf)
@@ -98,5 +179,3 @@ class FSR(Component):
 
         output_polynomials = y+vector(x)
         return output_polynomials
-
-

@@ -25,6 +25,7 @@ from copy import deepcopy
 from decimal import Decimal
 from random import randrange
 from collections import defaultdict, Counter
+from bitstring import BitArray
 
 
 from sage.rings.integer_ring import IntegerRing
@@ -492,3 +493,58 @@ def poly_to_int(polynom, word_size, a):
     output = int("0b" + output, base=2)
 
     return output
+
+def bits_to_words_array(input, bits_inside_word, word_gf):
+    y = word_gf.gen()
+
+    monomials = [pow(y, i) for i in range(bits_inside_word - 1, -1, -1)]
+    word_array = [0 for _ in
+                  range(int(len(input) / bits_inside_word))]
+
+    for i in range(len(word_array)):
+        c = 0
+        for j in range(len(monomials)):
+            c += (input[(i * 8) + j]) * monomials[j]
+        word_array[i] = c
+
+    return word_array
+
+def words_array_to_bits(word_array, bits_inside_word):
+    output = BitArray()
+    s = f'0b'
+    for _ in word_array[0]:
+        kl = list(_)
+        for j in range(bits_inside_word - 1, -1, -1):
+            v = f'1' if kl[j] else f'0'
+            s = s + v
+    output.append(s)
+    return output
+
+def get_polynomial_from_binary_polynomial_index_list(polynomial_index_list, R):
+    if polynomial_index_list == []:
+        return R(1)
+    p = 0
+    x = R.gens()
+    for _ in polynomial_index_list:
+        m = 1
+        for i in _:
+            m = m * x[i]
+        p += m
+    return p
+
+def get_polynomial_from_word_polynomial_index_list(polynomial_index_list, R):
+    if polynomial_index_list == []:
+        return R(1)
+    p = 0
+    x = R.gens()
+    y = R.construction()[1].gen()
+
+    for _ in polynomial_index_list:
+        m = 0  # presently it is for field of characteristic 2 only
+        cc = "{0:b}".format(_[0])
+        for i in range(len(cc)):
+            if cc[i] == '1':  m = m + pow(y, len(cc) - 1 - i)
+        for i in _[1]:
+            m = m * x[i]
+        p += m
+    return p

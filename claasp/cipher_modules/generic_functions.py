@@ -19,7 +19,7 @@
 # using bitstring module to manage bits
 from math import log
 from copy import copy
-from bitstring import BitArray  # pip3 install bitstring
+from bitstring import BitArray
 
 from sage.crypto.sbox import SBox
 from sage.rings.quotient_ring import QuotientRing
@@ -29,6 +29,8 @@ from sage.rings.polynomial.polynomial_ring_constructor import PolynomialRing
 from sage.rings.finite_rings.finite_field_constructor import FiniteField as GF
 
 from claasp.utils.utils import int_to_poly, poly_to_int
+from claasp.utils.utils import bits_to_words_array, words_array_to_bits
+from claasp.utils.utils import get_polynomial_from_binary_polynomial_index_list, get_polynomial_from_word_polynomial_index_list
 from claasp.cipher_modules.models.algebraic.boolean_polynomial_ring import BooleanPolynomialRing
 
 number_of_inputs_expression = "  #in = {}"
@@ -967,18 +969,6 @@ def fsr_binary(input, registers_info, number_of_clocks, verbosity=False):
     - ``verbosity`` -- **boolean** (default: `False`); set this flag to True to print the input/output
     """
 
-    def get_polynomail(polynomial_index_list, R):
-        if polynomial_index_list == []:
-            return R(1)
-        p = 0
-        x = R.gens()
-        for _ in polynomial_index_list:
-            m = 1
-            for i in _:
-                m = m * x[i]
-            p += m
-        return p
-
     output = BitArray(input)
     R = BooleanPolynomialRing(len(input), 'x')
     number_of_registers = len(registers_info)
@@ -992,9 +982,9 @@ def fsr_binary(input, registers_info, number_of_clocks, verbosity=False):
         registers_start[i] = end
         end += registers_info[i][0]
         registers_update_bit[i] = end - 1
-        registers_polynomial[i] = get_polynomail(registers_info[i][1], R)
+        registers_polynomial[i] = get_polynomial_from_binary_polynomial_index_list(registers_info[i][1], R)
         if len(registers_info[i]) > 2:
-            clock_polynomials[i] = get_polynomail(registers_info[i][2], R)
+            clock_polynomials[i] = get_polynomial_from_binary_polynomial_index_list(registers_info[i][2], R)
 
     for r in range(number_of_clocks):
         do_clocks = [True for _ in range(number_of_registers)]
@@ -1038,51 +1028,8 @@ def fsr_word(input, registers_info, bits_inside_word, number_of_clocks, verbosit
     - ``verbosity`` -- **boolean** (default: `False`); set this flag to True to print the input/output
     """
 
-    def bits_to_word(input, bits_inside_word, word_gf):
-        y = word_gf.gen()
-
-        monomials = [pow(y, i) for i in range(bits_inside_word - 1, -1, -1)]
-        word_array = [0 for _ in
-                      range(int(len(input) / bits_inside_word))]
-
-        for i in range(len(word_array)):
-            c = 0
-            for j in range(len(monomials)):
-                c += (input[(i * 8) + j]) * monomials[j]
-            word_array[i] = c
-
-        return word_array
-
-    def word_to_bits(word_array, bits_inside_word):
-        output = BitArray()
-        s = f'0b'
-        for _ in word_array[0]:
-            kl = list(_)
-            for j in range(bits_inside_word - 1, -1, -1):
-                v = f'1' if kl[j] else f'0'
-                s = s + v
-        output.append(s)
-        return output
-
-    def get_polynomail(polynomial_index_list, R):
-        if polynomial_index_list == []:
-            return R(1)
-        p = 0
-        x = R.gens()
-        y = R.construction()[1].gen()
-
-        for _ in polynomial_index_list:
-            m = 0  # presently it is for field of characteristic 2 only
-            cc = "{0:b}".format(_[0])
-            for i in range(len(cc)):
-                if cc[i] == '1':  m = m + pow(y, len(cc) - 1 - i)
-            for i in _[1]:
-                m = m * x[i]
-            p += m
-        return p
-
     word_gf = GF(pow(2, bits_inside_word))
-    word_array = bits_to_word(input, bits_inside_word, word_gf)
+    word_array = bits_to_words_array(input, bits_inside_word, word_gf)
     R = PolynomialRing(word_gf, len(word_array), 'x')
     number_of_registers = len(registers_info)
     registers_polynomial = [0 for _ in range(number_of_registers)]
@@ -1094,9 +1041,9 @@ def fsr_word(input, registers_info, bits_inside_word, number_of_clocks, verbosit
         registers_start[i] = end
         end += registers_info[i][0]
         registers_update_word[i] = end - 1
-        registers_polynomial[i] = get_polynomail(registers_info[i][1], R)
+        registers_polynomial[i] = get_polynomial_from_word_polynomial_index_list(registers_info[i][1], R)
         if len(registers_info[i]) > 2:
-            clock_polynomials[i] = get_polynomail(registers_info[i][2], R)
+            clock_polynomials[i] = get_polynomial_from_word_polynomial_index_list(registers_info[i][2], R)
     for r in range(number_of_clocks):
         do_clocks = [True for _ in range(number_of_registers)]
         output_words = [0 for _ in range(number_of_registers)]
@@ -1115,7 +1062,7 @@ def fsr_word(input, registers_info, bits_inside_word, number_of_clocks, verbosit
             registers.append(reg)
         word_array = registers
 
-    output = word_to_bits(word_array, bits_inside_word)
+    output = words_array_to_bits(word_array, bits_inside_word)
     if verbosity:
         print("FSR:")
         for i in range(number_of_registers):
