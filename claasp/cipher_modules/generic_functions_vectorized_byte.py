@@ -20,6 +20,7 @@
 import numpy as np
 from copy import copy
 from functools import reduce
+from operator import xor
 
 NB = 8  # Number of bits of the representation
 

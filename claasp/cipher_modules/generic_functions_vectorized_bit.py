@@ -501,3 +501,4 @@ def bit_vector_mix_column_poly0(input, matrix, verbosity=False):
         print("---")
 
     return output
+
